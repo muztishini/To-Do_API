@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Body
+from fastapi import FastAPI, Depends, Body, HTTPException
 from database import *
 from sqlalchemy.orm import Session
 from fastapi.responses import JSONResponse
@@ -8,6 +8,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="To-Do_API")
 
+lst = set([1, 2, 3, 4])
 
 def get_db():
     db = SessionLocal()
@@ -39,7 +40,7 @@ async def get_tasks(db: Session = Depends(get_db)) -> list[TaskModel]:
 async def get_task(id: int, db: Session = Depends(get_db)):
     task = db.query(Task).filter(Task.id == id).first()
     if task is None:
-        return JSONResponse(status_code=404, content={"message": f"Задача {id} не найдена"})
+        raise HTTPException(status_code=404, detail=f"Задача {id} не найдена")
     else:
         status = db.query(Status).get(task.status_id)
         task = TaskModel(id=task.id, name=task.name, desc=task.desc,
@@ -50,38 +51,40 @@ async def get_task(id: int, db: Session = Depends(get_db)):
 
 @app.post('/api/task')
 async def create_task(data=Body(), db: Session = Depends(get_db)):
-    task = Task(name=data["name"], desc=data["desc"],
-                status_id=data["status_id"])
-    db.add(task)
-    db.commit()
-    db.refresh(task)
-    # return task
-    return JSONResponse(status_code=200, content={"message": "Задача добавлена"})
+    stat = data.get("status_id")
+    if stat in lst:   
+        task = Task(name=data.get("name"), desc=data.get("desc"),
+                    status_id=stat)   
+        db.add(task)
+        db.commit()
+        db.refresh(task)
+        return task
+    else:
+        raise HTTPException(status_code=400, detail="Некорректные данные")
 
 
 @app.put("/api/task/{id}")
 async def edit_task(id: int, data=Body(), db: Session = Depends(get_db)):
     task = db.query(Task).filter(Task.id == id).first()
     if not task:
-        return JSONResponse(status_code=404, content={"message": f"Задача {id} не найдена"})
-    task.name = data["name"]
-    task.desc = data["desc"]
-    task.status_id = data["status_id"]
+        raise HTTPException(status_code=404, detail=f"Задача {id} не найдена")
+    task.name = data.get("name")
+    task.desc = data.get("desc")
+    task.status_id = data.get("status_id")
     
-    # task = TaskModel(name=task.name, desc=task.desc,
-    #                      status=task.status_id)
-    
-    db.commit()
-    db.refresh(task)
-    # return task
-    return JSONResponse(status_code=200, content={"message": f"Задача {id} изменена"})
+    if task.status_id in lst:        
+        db.commit()
+        db.refresh(task)
+        return task
+    else:
+       raise HTTPException(status_code=400, detail="Некорректные данные")
 
 
 @app.delete("/api/task/{id}")
 async def delete_task(id: int, data=Body(), db: Session = Depends(get_db)):
     task = db.query(Task).filter(Task.id == id).first()
     if not task:
-        return JSONResponse(status_code=404, content={"message": f"Задача {id} не найдена"})
+        raise HTTPException(status_code=404, detail=f"Задача {id} не найдена")
     db.delete(task)
     db.commit()
     return JSONResponse(status_code=200, content={"message": f"Задача {id} удалена"})
