@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from datetime import datetime
 
 
@@ -14,3 +14,16 @@ class TaskModel(BaseModel):
     create_time: datetime
     update_time: datetime
     status: StatusModel()
+
+
+class CreateTaskModel(BaseModel):
+    name: str
+    desc: str
+    status: int
+            
+    @validator('status')
+    def validate_status(cls, value):
+        if value not in (1, 2, 3, 4):
+            raise ValueError('Status must be 1, 2, 3 or 4')
+        return value
+    
