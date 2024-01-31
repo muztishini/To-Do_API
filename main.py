@@ -39,7 +39,7 @@ async def get_tasks(db: Session = Depends(get_db)) -> list[TaskModel]:
 async def get_task(id: int, db: Session = Depends(get_db)):
     task = db.query(Task).filter(Task.id == id).first()
     if task is None:
-        return JSONResponse(status_code=404, content={"message": "Нет такой задачи"})
+        return JSONResponse(status_code=404, content={"message": f"Задача {id} не найдена"})
     else:
         status = db.query(Status).get(task.status_id)
         task = TaskModel(id=task.id, name=task.name, desc=task.desc,
@@ -49,10 +49,39 @@ async def get_task(id: int, db: Session = Depends(get_db)):
 
 
 @app.post('/api/task')
-async def create_task(data=Body(), db: Session = Depends(get_db), ):
+async def create_task(data=Body(), db: Session = Depends(get_db)):
     task = Task(name=data["name"], desc=data["desc"],
                 status_id=data["status_id"])
     db.add(task)
     db.commit()
     db.refresh(task)
-    return task
+    # return task
+    return JSONResponse(status_code=200, content={"message": "Задача добавлена"})
+
+
+@app.put("/api/task/{id}")
+async def edit_task(id: int, data=Body(), db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.id == id).first()
+    if not task:
+        return JSONResponse(status_code=404, content={"message": f"Задача {id} не найдена"})
+    task.name = data["name"]
+    task.desc = data["desc"]
+    task.status_id = data["status_id"]
+    
+    # task = TaskModel(name=task.name, desc=task.desc,
+    #                      status=task.status_id)
+    
+    db.commit()
+    db.refresh(task)
+    # return task
+    return JSONResponse(status_code=200, content={"message": f"Задача {id} изменена"})
+
+
+@app.delete("/api/task/{id}")
+async def delete_task(id: int, data=Body(), db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.id == id).first()
+    if not task:
+        return JSONResponse(status_code=404, content={"message": f"Задача {id} не найдена"})
+    db.delete(task)
+    db.commit()
+    return JSONResponse(status_code=200, content={"message": f"Задача {id} удалена"})
