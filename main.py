@@ -51,7 +51,7 @@ async def create_task(task: CreateTaskModel,  db: Session = Depends(get_db)):
 @app.put("/api/task/{id}")
 async def edit_task(task: CreateTaskModel, id: int, db: Session = Depends(get_db)):
     task1 = db.query(Task).filter(Task.id == id).first()
-    if not task:
+    if not task1:
         raise HTTPException(status_code=404, detail=f"Задача {id} не найдена")
     task1.name = task.name
     task1.desc = task.desc 
