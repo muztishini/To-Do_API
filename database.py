@@ -3,9 +3,13 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
 from datetime import datetime
+import psycopg2
 
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./todo_app.db"
+# SQLALCHEMY_DATABASE_URL = "sqlite:///./todo_app.db"
+
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:1234@localhost/fastdb"
+
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 Base = declarative_base()
