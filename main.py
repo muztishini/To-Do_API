@@ -9,8 +9,6 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="To-Do_API")
 
-lst = set([1, 2, 3, 4])
-
 def get_db():
     db = SessionLocal()
     try:
