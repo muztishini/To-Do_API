@@ -3,7 +3,7 @@ from database import *
 from sqlalchemy.orm import Session
 from fastapi.responses import JSONResponse
 from models import *
-from typing import List
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -22,19 +22,42 @@ async def root():
     return {"message": "Hello!"}
 
 
-@app.get("/api/task", response_model=List[TaskModel])
-async def get_tasks(db: Session = Depends(get_db)) -> list[TaskModel]:
+@app.get("/api/task")
+async def get_tasks(db: Session = Depends(get_db)):
     tasks = db.query(Task).all()
-    return tasks
+    task_models = []
+    for task in tasks:
+        status = db.query(Status).get(task.status_id)
+        task_model = TaskModel(
+            id=task.id,
+            name=task.name,
+            desc=task.desc,
+            create_time=task.create_time,
+            update_time=task.update_time,
+            status=StatusModel(id=status.id, name=status.name_status)
+        )
+        task_models.append(task_model)
+
+    return task_models
 
 
-@app.get("/api/task/{id}", response_model=TaskModel)
+@app.get("/api/task/{id}")
 async def get_task(id: int, db: Session = Depends(get_db)):
     task = db.query(Task).filter(Task.id == id).first()
     if task is None:
         raise HTTPException(status_code=404, detail=f"Задача {id} не найдена")
     else:
-        return task
+        status = db.query(Status).get(task.status_id)
+        task_model = TaskModel(
+            id=task.id,
+            name=task.name,
+            desc=task.desc,
+            create_time=task.create_time,
+            update_time=task.update_time,
+            status=StatusModel(id=status.id, name=status.name_status)
+        )
+
+        return task_model
 
 
 @app.post('/api/task')

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from datetime import datetime
 
 
@@ -21,7 +21,7 @@ class CreateTaskModel(BaseModel):
     desc: str
     status: int
             
-    @validator('status')
+    @field_validator('status')
     def validate_status(cls, value):
         if value not in (1, 2, 3, 4):
             raise ValueError('Status must be 1, 2, 3 or 4')
